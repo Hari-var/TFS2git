@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TFS to Github Migration Assessment Report</title>
+
+  <!-- Inter font (sans-serif stack as required) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* Palette (use only these colors for visible UI) */
+    :root{
+      --bg-main: #F8F8F8;
+      --neutral-2: #DFDFDF;
+      --neutral-3: #C5C5C5;
+      --text-primary: #303030;
+
+      /* Greens */
+      --green-verylight: #DFF8DD;
+      --green-2: #B7EFB3;
+      --green-3: #8FE689;
+      --green-primary: #3FD534;
+      --green-4: #2EB125;
+      --green-5: #23871C;
+      --green-6: #185D13;
+
+      /* Blues */
+      --blue-verylight: #CFE2FE;
+      --blue-2: #9CC5FE;
+      --blue-3: #6AA7FD;
+      --blue-primary: #056BFC;
+      --blue-4: #0255CC;
+      --blue-5: #024099;
+      --blue-6: #002152;
+      --blue-7: #071933;
+
+      /* Yellows / Accents */
+      --yellow-verylight: #FFF1C7;
+      --yellow-2: #FFE594;
+      --yellow-3: #FFD861;
+      --yellow-accent: #FABD00;
+      --yellow-5: #C79600;
+      --yellow-6: #947000;
+      --yellow-7: #614900;
+    }
+
+    /* Base */
+    html,body{
+      height:100%;
+      margin:0;
+      background:var(--bg-main);
+      color:var(--text-primary);
+      font-family: 'Inter', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      font-size:16px;
+      line-height:1.6;
+    }
+
+    .page {
+      max-width:1200px;
+      margin:0 auto;
+      padding:48px 32px;
+      box-sizing:border-box;
+    }
+
+    /* Top bar with logo at left and centered title */
+    .topbar {
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0 0 32px;
+      margin-bottom:0;
+      border-bottom:1px solid var(--neutral-3);
+    }
+
+    .logo {
+      position:absolute;
+      left:0;
+      top:50%;
+      transform:translateY(-50%);
+      display:flex;
+      align-items:center;
+    }
+    .logo img{
+      height:48px;
+      width:auto;
+      display:block;
+      border-radius:4px;
+      border:none;
+      background:transparent;
+      opacity:0.9;
+      transition:opacity 0.3s ease;
+    }
+    
+    .logo img:hover {
+      opacity:1;
+    }
+
+    h1 {
+      margin:0;
+      text-align:center;
+      font-weight:600;
+      font-size:1.75rem;
+      color:var(--text-primary);
+      letter-spacing:0;
+      line-height:1.3;
+    }
+
+    p.lead {
+      max-width:900px;
+      margin:24px auto 0;
+      padding:0;
+      text-align:center;
+      color:var(--text-primary);
+      font-weight:400;
+      font-size:0.95rem;
+      line-height:1.6;
+      background:transparent;
+      border-radius:0;
+      border-left:none;
+    }
+
+    /* Card / table container */
+    .card {
+      background:var(--bg-main);
+      border:1px solid var(--neutral-3);
+      border-radius:8px;
+      padding:24px;
+      box-sizing:border-box;
+      overflow:auto;
+      box-shadow:none;
+      margin:24px 0;
+    }
+
+    table.report {
+      width:100%;
+      border-collapse:collapse;
+      font-size:0.95rem;
+      margin:0;
+    }
+
+    table.report caption {
+      text-align:left;
+      font-weight:700;
+      padding:0 0 16px 2px;
+      color:var(--text-primary);
+      font-size:1.05rem;
+      letter-spacing:0.3px;
+    }
+
+    table.report thead th{
+      text-align:left;
+      padding:16px 16px;
+      font-weight:700;
+      font-size:0.9rem;
+      background:var(--blue-primary);
+      color:var(--bg-main);
+      border-bottom:2px solid var(--blue-4);
+      position:sticky;
+      top:0;
+      z-index:2;
+      letter-spacing:0.4px;
+      text-transform:uppercase;
+    }
+
+    table.report tbody td{
+      padding:14px 16px;
+      border-bottom:1px solid var(--neutral-3);
+      color:var(--text-primary);
+      font-weight:500;
+    }
+
+    table.report tbody tr:nth-child(odd){
+      background:var(--bg-main);
+    }
+    table.report tbody tr:nth-child(even){
+      background:var(--green-verylight);
+    }
+
+    table.report tbody tr:hover{
+      background:var(--blue-verylight);
+      box-shadow:inset 0 0 8px rgba(5, 107, 252, 0.08);
+    }
+
+    /* Report links styled with brand blue */
+    a.report-link{
+      color:var(--blue-primary);
+      text-decoration:none;
+      font-weight:600;
+      border-bottom:1px solid var(--blue-3);
+      padding:0 0 1px;
+      transition:all 0.2s ease;
+      display:inline-block;
+    }
+    a.report-link:hover{
+      color:var(--blue-5);
+      border-bottom-color:var(--blue-5);
+      transform:none;
+    }
+
+    /* Complexity pill */
+    .pill {
+      display:inline-block;
+      padding:6px 12px;
+      border-radius:999px;
+      font-weight:600;
+      font-size:0.8rem;
+      color:var(--bg-main);
+      letter-spacing:0;
+      box-shadow:none;
+      transition:all 0.2s ease;
+    }
+    .pill.easy { background:var(--green-primary); }
+    .pill.medium { background:var(--yellow-accent); color:var(--text-primary); }
+    .pill.hard { background:var(--blue-6); }
+    
+    .pill:hover {
+      transform:none;
+      box-shadow:none;
+    }
+
+    /* Footer */
+    footer.site-footer{
+      margin-top:40px;
+      background:transparent;
+      color:var(--text-primary);
+      padding:20px 0;
+      border-radius:0;
+      text-align:center;
+      font-size:0.85rem;
+      font-weight:400;
+      letter-spacing:0;
+      box-shadow:none;
+      border-top:1px solid var(--neutral-3);
+    }
+
+    /* Responsive tweaks */
+    @media (max-width:768px){
+      h1{font-size:1.5rem}
+      .page{padding:28px 16px}
+      .topbar{padding:0 0 32px}
+      .logo img{height:44px}
+      table.report thead th, table.report tbody td{padding:12px 10px; font-size:0.9rem}
+      p.lead{font-size:0.95rem; padding:16px}
+      .card{padding:16px}
+    }
+
+    @media (max-width:480px){
+      h1{font-size:1.25rem; letter-spacing:0}
+      .page{padding:20px 12px}
+      .topbar{padding:0 0 24px; margin-bottom:0}
+      .logo{position:relative; left:auto; transform:none; margin-bottom:16px}
+      .logo img{height:40px}
+      table.report{font-size:0.85rem}
+      table.report thead th, table.report tbody td{padding:10px 8px}
+      p.lead{font-size:0.9rem; padding:12px}
+      .card{padding:12px}
+      footer.site-footer{padding:20px 16px; margin-top:24px}
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar" role="banner">
+      <div class="logo">
+        <img src="https://raw.githubusercontent.com/Hari-var/RSS_feed/refs/heads/main/public/ValueMomentum_logo.png" alt="ValueMomentum logo">
+      </div>
+
+      <div>
+        <h1>TFS to Github Migration Assessment Report</h1>
+      </div>
+    </header>
+
+    <p class="lead">lorem ipsum</p>
+
+    <section class="card" aria-labelledby="report-table">
+      <table class="report" aria-describedby="report-caption">
+        <caption id="report-caption">Repository assessment summary</caption>
+
+        <thead>
+          <tr>
+            <th style="width:6%;">SNo</th>
+            <th style="width:36%;">Repo Name</th>
+            <th style="width:14%;">Repo Size</th>
+            <th style="width:18%;">Sensitive Data Occurrences</th>
+            <th style="width:12%;">Complexity</th>
+            <th style="width:14%;">Report Link (Html page)</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>$Clm.LynxClaimViewer</td>
+            <td>483 MB</td>
+            <td>2</td>
+            <td><span class="pill medium">Medium</span></td>
+            <td><a class="report-link" href="reports/Clm_LynxClaimViewer.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>2</td>
+            <td>$Ent.AdhocDocumentUtility</td>
+            <td>124 MB</td>
+            <td>0</td>
+            <td><span class="pill easy">Easy</span></td>
+            <td><a class="report-link" href="reports/Ent_AdhocDocumentUtility.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>3</td>
+            <td>$Ent.AgilePoint-Batch</td>
+            <td>788 MB</td>
+            <td>5</td>
+            <td><span class="pill hard">Hard</span></td>
+            <td><a class="report-link" href="reports/Ent_AgilePoint-Batch.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>4</td>
+            <td>$Ent.AgilePoint-Paperless</td>
+            <td>632 MB</td>
+            <td>3</td>
+            <td><span class="pill medium">Medium</span></td>
+            <td><a class="report-link" href="reports/Ent_AgilePoint-Paperless.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>5</td>
+            <td>$Ent.CDS-EDS</td>
+            <td>211 MB</td>
+            <td>1</td>
+            <td><span class="pill easy">Easy</span></td>
+            <td><a class="report-link" href="reports/Ent_CDS-EDS.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>6</td>
+            <td>$Ent.CheckProcessingUtility</td>
+            <td>355 MB</td>
+            <td>0</td>
+            <td><span class="pill medium">Medium</span></td>
+            <td><a class="report-link" href="reports/Ent_CheckProcessingUtility.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>7</td>
+            <td>$Ent.HeaderCard</td>
+            <td>47 MB</td>
+            <td>0</td>
+            <td><span class="pill easy">Easy</span></td>
+            <td><a class="report-link" href="reports/Ent_HeaderCard.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>8</td>
+            <td>$Ent.MCOCalculator</td>
+            <td>198 MB</td>
+            <td>4</td>
+            <td><span class="pill medium">Medium</span></td>
+            <td><a class="report-link" href="reports/Ent_MCOCalculator.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>9</td>
+            <td>$Ent.NumberGenerator</td>
+            <td>74 MB</td>
+            <td>0</td>
+            <td><span class="pill easy">Easy</span></td>
+            <td><a class="report-link" href="reports/Ent_NumberGenerator.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>10</td>
+            <td>$Ent.ProcessFiles</td>
+            <td>542 MB</td>
+            <td>7</td>
+            <td><span class="pill hard">Hard</span></td>
+            <td><a class="report-link" href="reports/Ent_ProcessFiles.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>11</td>
+            <td>$Ent.ProofOfMailBatch</td>
+            <td>320 MB</td>
+            <td>1</td>
+            <td><span class="pill medium">Medium</span></td>
+            <td><a class="report-link" href="reports/Ent_ProofOfMailBatch.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>12</td>
+            <td>$Ent.QAETracker</td>
+            <td>88 MB</td>
+            <td>0</td>
+            <td><span class="pill easy">Easy</span></td>
+            <td><a class="report-link" href="reports/Ent_QAETracker.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>13</td>
+            <td>$Ent.SIS</td>
+            <td>411 MB</td>
+            <td>2</td>
+            <td><span class="pill medium">Medium</span></td>
+            <td><a class="report-link" href="reports/Ent_SIS.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>14</td>
+            <td>$Ent.SurveyBatch</td>
+            <td>217 MB</td>
+            <td>0</td>
+            <td><span class="pill easy">Easy</span></td>
+            <td><a class="report-link" href="reports/Ent_SurveyBatch.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+          <tr>
+            <td>15</td>
+            <td>$FAC.ImpairmentRequest</td>
+            <td>709 MB</td>
+            <td>9</td>
+            <td><span class="pill hard">Hard</span></td>
+            <td><a class="report-link" href="reports/FAC_ImpairmentRequest.html" target="_blank" rel="noopener">View report</a></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="site-footer" role="contentinfo">
+      © Assessment generated — TFS to Github migration. All visible UI uses the supplied brand palette.
+    </footer>
+  </div>
+</body>
